@@ -11,9 +11,9 @@
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="assets/hero-light.svg">
-    <img alt="Sleepless: keep your Mac awake with the lid closed" src="assets/hero-light.svg" width="760">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.gif">
+    <source media="(prefers-color-scheme: light)" srcset="assets/hero-light.gif">
+    <img alt="Sleepless: keep your Mac awake with the lid closed" src="assets/hero-light.gif" width="760">
   </picture>
 </p>
 
