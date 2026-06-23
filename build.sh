@@ -16,9 +16,19 @@ set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_NAME="Sleepless"
-# macOS arm64 target. Sleepless is verified on macOS 26 (Tahoe) / Apple Silicon.
-# Override with TARGET=... (e.g. CI on a runner whose SDK predates macOS 26).
-TARGET="${TARGET:-arm64-apple-macos26.0}"
+# Default to the current Mac's architecture and current macOS major release.
+# Override with DEPLOYMENT_TARGET=..., MACOSX_DEPLOYMENT_TARGET=..., or TARGET=...
+# when building for a different machine.
+HOST_ARCH="$(uname -m)"
+HOST_MACOS_MAJOR="$(sw_vers -productVersion | cut -d. -f1)"
+if [ -n "${TARGET:-}" ]; then
+  DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-${DEPLOYMENT_TARGET:-$(printf '%s\n' "$TARGET" | sed -nE 's/.*-macosx?([0-9]+(\.[0-9]+)?).*/\1/p')}}"
+  DEPLOYMENT_TARGET="${DEPLOYMENT_TARGET:-$HOST_MACOS_MAJOR.0}"
+else
+  DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-${DEPLOYMENT_TARGET:-$HOST_MACOS_MAJOR.0}}"
+  TARGET="$HOST_ARCH-apple-macosx$DEPLOYMENT_TARGET"
+fi
+export MACOSX_DEPLOYMENT_TARGET="$DEPLOYMENT_TARGET"
 
 # Destination: first non-flag arg, else $DEST, else ./build
 DEST="${DEST:-}"
@@ -38,6 +48,7 @@ echo "==> Building $APP_NAME.app"
 echo "    repo:   $REPO"
 echo "    dest:   $DEST"
 echo "    target: $TARGET"
+echo "    min OS: $DEPLOYMENT_TARGET"
 
 command -v swiftc >/dev/null || { echo "error: swiftc not found. Install the Command Line Tools: xcode-select --install" >&2; exit 1; }
 
@@ -64,6 +75,7 @@ echo "==> Assembling bundle"
 rm -rf "$APP"
 mkdir -p "$CONTENTS/MacOS" "$CONTENTS/Resources"
 cp "$REPO/Info.plist" "$CONTENTS/Info.plist"
+plutil -replace LSMinimumSystemVersion -string "$DEPLOYMENT_TARGET" "$CONTENTS/Info.plist"
 cp "$BIN_TMP/$APP_NAME" "$CONTENTS/MacOS/$APP_NAME"
 cp "$ICNS" "$CONTENTS/Resources/$APP_NAME.icns"
 chmod +x "$CONTENTS/MacOS/$APP_NAME"
